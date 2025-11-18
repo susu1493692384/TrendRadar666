@@ -87,7 +87,6 @@ def load_config():
             "dingtalk_batch_size", 20000
         ),
         "FEISHU_BATCH_SIZE": config_data["notification"].get("feishu_batch_size", 29000),
-        "WPS_BATCH_SIZE": config_data["notification"].get("wps_batch_size", 5000),
         "BATCH_SEND_INTERVAL": config_data["notification"]["batch_send_interval"],
         "FEISHU_MESSAGE_SEPARATOR": config_data["notification"][
             "feishu_message_separator"
@@ -2965,8 +2964,6 @@ def split_content_into_batches(
             max_bytes = CONFIG.get("FEISHU_BATCH_SIZE", 29000)
         elif format_type == "ntfy":
             max_bytes = 3800
-        elif format_type == "wps":
-            max_bytes = CONFIG.get("WPS_BATCH_SIZE", 20000)
         else:
             max_bytes = CONFIG.get("MESSAGE_BATCH_SIZE", 4000)
 
@@ -2987,11 +2984,6 @@ def split_content_into_batches(
     elif format_type == "feishu":
         base_header = ""
     elif format_type == "dingtalk":
-        base_header = f"**总新闻数：** {total_titles}\n\n"
-        base_header += f"**时间：** {now.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        base_header += f"**类型：** 热点分析报告\n\n"
-        base_header += "---\n\n"
-    elif format_type == "wps":
         base_header = f"**总新闻数：** {total_titles}\n\n"
         base_header += f"**时间：** {now.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
         base_header += f"**类型：** 热点分析报告\n\n"
@@ -3018,10 +3010,6 @@ def split_content_into_batches(
         base_footer = f"\n\n> 更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
         if update_info:
             base_footer += f"\n> TrendRadar 发现新版本 **{update_info['remote_version']}**，当前 **{update_info['current_version']}**"
-    elif format_type == "wps":
-        base_footer = f"\n\n> 更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
-        if update_info:
-            base_footer += f"\n> TrendRadar 发现新版本 **{update_info['remote_version']}**，当前 **{update_info['current_version']}**"
 
     stats_header = ""
     if report_data["stats"]:
@@ -3034,8 +3022,6 @@ def split_content_into_batches(
         elif format_type == "feishu":
             stats_header = f"📊 **热点词汇统计**\n\n"
         elif format_type == "dingtalk":
-            stats_header = f"📊 **热点词汇统计**\n\n"
-        elif format_type == "wps":
             stats_header = f"📊 **热点词汇统计**\n\n"
 
     current_batch = base_header
@@ -3130,17 +3116,6 @@ def split_content_into_batches(
                     )
                 else:
                     word_header = f"📌 {sequence_display} **{word}** : {count} 条\n\n"
-            elif format_type == "wps":
-                if count >= 10:
-                    word_header = (
-                        f"🔥 {sequence_display} **{word}** : **{count}** 条\n\n"
-                    )
-                elif count >= 5:
-                    word_header = (
-                        f"📈 {sequence_display} **{word}** : **{count}** 条\n\n"
-                    )
-                else:
-                    word_header = f"📌 {sequence_display} **{word}** : {count} 条\n\n"
 
             # 构建第一条新闻
             first_news_line = ""
@@ -3165,10 +3140,6 @@ def split_content_into_batches(
                 elif format_type == "dingtalk":
                     formatted_title = format_title_for_platform(
                         "dingtalk", first_title_data, show_source=True
-                    )
-                elif format_type == "wps":
-                    formatted_title = format_title_for_platform(
-                        "wps", first_title_data, show_source=True
                     )
                 else:
                     formatted_title = f"{first_title_data['title']}"
@@ -3219,10 +3190,6 @@ def split_content_into_batches(
                     formatted_title = format_title_for_platform(
                         "dingtalk", title_data, show_source=True
                     )
-                elif format_type == "wps":
-                    formatted_title = format_title_for_platform(
-                        "wps", title_data, show_source=True
-                    )
                 else:
                     formatted_title = f"{title_data['title']}"
 
@@ -3256,8 +3223,6 @@ def split_content_into_batches(
                     separator = f"\n{CONFIG['FEISHU_MESSAGE_SEPARATOR']}\n\n"
                 elif format_type == "dingtalk":
                     separator = f"\n---\n\n"
-                elif format_type == "wps":
-                    separator = f"\n---\n\n"
 
                 test_content = current_batch + separator
                 if (
@@ -3280,8 +3245,6 @@ def split_content_into_batches(
         elif format_type == "feishu":
             new_header = f"\n{CONFIG['FEISHU_MESSAGE_SEPARATOR']}\n\n🆕 **本次新增热点新闻** (共 {report_data['total_new_count']} 条)\n\n"
         elif format_type == "dingtalk":
-            new_header = f"\n---\n\n🆕 **本次新增热点新闻** (共 {report_data['total_new_count']} 条)\n\n"
-        elif format_type == "wps":
             new_header = f"\n---\n\n🆕 **本次新增热点新闻** (共 {report_data['total_new_count']} 条)\n\n"
 
         test_content = current_batch + new_header
@@ -3310,8 +3273,6 @@ def split_content_into_batches(
                 source_header = f"**{source_data['source_name']}** ({len(source_data['titles'])} 条):\n\n"
             elif format_type == "dingtalk":
                 source_header = f"**{source_data['source_name']}** ({len(source_data['titles'])} 条):\n\n"
-            elif format_type == "wps":
-                source_header = f"**{source_data['source_name']}** ({len(source_data['titles'])} 条):\n\n"
 
             # 构建第一条新增新闻
             first_news_line = ""
@@ -3335,10 +3296,6 @@ def split_content_into_batches(
                 elif format_type == "dingtalk":
                     formatted_title = format_title_for_platform(
                         "dingtalk", title_data_copy, show_source=False
-                    )
-                elif format_type == "wps":
-                    formatted_title = format_title_for_platform(
-                        "wps", title_data_copy, show_source=False
                     )
                 else:
                     formatted_title = f"{title_data_copy['title']}"
@@ -3385,10 +3342,6 @@ def split_content_into_batches(
                     formatted_title = format_title_for_platform(
                         "dingtalk", title_data_copy, show_source=False
                     )
-                elif format_type == "wps":
-                    formatted_title = format_title_for_platform(
-                        "wps", title_data_copy, show_source=False
-                    )
                 else:
                     formatted_title = f"{title_data_copy['title']}"
 
@@ -3421,8 +3374,6 @@ def split_content_into_batches(
             failed_header = f"\n{CONFIG['FEISHU_MESSAGE_SEPARATOR']}\n\n⚠️ **数据获取失败的平台：**\n\n"
         elif format_type == "dingtalk":
             failed_header = f"\n---\n\n⚠️ **数据获取失败的平台：**\n\n"
-        elif format_type == "wps":
-            failed_header = f"\n---\n\n⚠️ **数据获取失败的平台：**\n\n"
 
         test_content = current_batch + failed_header
         if (
@@ -3441,8 +3392,6 @@ def split_content_into_batches(
             if format_type == "feishu":
                 failed_line = f"  • <font color='red'>{id_value}</font>\n"
             elif format_type == "dingtalk":
-                failed_line = f"  • **{id_value}**\n"
-            elif format_type == "wps":
                 failed_line = f"  • **{id_value}**\n"
             else:
                 failed_line = f"  • {id_value}\n"
@@ -3842,9 +3791,37 @@ def send_to_wps(
     if proxy_url:
         proxies = {"http": proxy_url, "https": proxy_url}
 
-    # 获取分批内容
-    batches = split_content_into_batches(report_data, "wps", update_info, mode=mode)
-
+    # 获取WPS格式的消息内容
+    wps_content = render_wps_content(report_data, update_info, mode)
+    
+    # WPS的消息格式限制，可能需要分批
+    max_text_length = 5000  # WPS消息文本长度限制
+    
+    # 如果消息太长，需要分批
+    text = wps_content["text"]
+    if len(text) > max_text_length:
+        # 简单分批策略：按行分割，确保每批不超过max_text_length
+        lines = text.split('\n')
+        batches = []
+        current_batch = ""
+        
+        for line in lines:
+            # 如果添加这一行会超过限制，且当前批次不为空，则保存当前批次并开始新批次
+            if len(current_batch + '\n' + line) > max_text_length and current_batch:
+                batches.append(current_batch)
+                current_batch = line
+            else:
+                if current_batch:
+                    current_batch += '\n' + line
+                else:
+                    current_batch = line
+        
+        # 添加最后一批
+        if current_batch:
+            batches.append(current_batch)
+    else:
+        batches = [text]
+    
     print(f"WPS消息分为 {len(batches)} 批次发送 [{report_type}]")
 
     # 逐批发送
@@ -3853,15 +3830,17 @@ def send_to_wps(
         print(f"发送WPS第 {i}/{len(batches)} 批次，大小：{batch_size} 字节 [{report_type}]")
 
         # 添加批次标识
+        title = wps_content["title"]
         if len(batches) > 1:
-            batch_header = f"**[第 {i}/{len(batches)} 批次]**\n\n"
-            batch_content = batch_header + batch_content
+            title = f"{title} - 第 {i}/{len(batches)} 批次"
 
         # WPS消息格式
         payload = {
-            "msgtype": "markdown",
-            "markdown": {
-                "content": batch_content
+            "msgtype": "link",
+            "link": {
+                "title": title,
+                "text": batch_content,
+                "btnTitle": "查看详情"
             }
         }
 
