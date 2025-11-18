@@ -3857,10 +3857,10 @@ def send_to_wps(
             batch_header = f"**[第 {i}/{len(batches)} 批次]**\n\n"
             batch_content = batch_header + batch_content
 
-        # WPS消息格式
+        # WPS消息格式 - 使用简单的text格式
         payload = {
-            "msgtype": "markdown",
-            "markdown": {
+            "msgtype": "text",
+            "text": {
                 "content": batch_content
             }
         }
@@ -3870,17 +3870,27 @@ def send_to_wps(
                 webhook_url, headers=headers, json=payload, proxies=proxies, timeout=30
             )
             if response.status_code == 200:
-                result = response.json()
-                if result.get("code") == 0:
+                # WPS机器人可能返回简单的成功响应
+                try:
+                    result = response.json()
+                    # 检查是否有错误码
+                    if result.get("errcode") == 0 or result.get("code") == 0:
+                        print(f"WPS第 {i}/{len(batches)} 批次发送成功 [{report_type}]")
+                        # 批次间间隔
+                        if i < len(batches):
+                            time.sleep(CONFIG["BATCH_SEND_INTERVAL"])
+                    else:
+                        error_msg = result.get('errmsg') or result.get('msg') or "未知错误"
+                        print(
+                            f"WPS第 {i}/{len(batches)} 批次发送失败 [{report_type}]，错误：{error_msg}"
+                        )
+                        return False
+                except:
+                    # 如果没有返回JSON，认为成功
                     print(f"WPS第 {i}/{len(batches)} 批次发送成功 [{report_type}]")
                     # 批次间间隔
                     if i < len(batches):
                         time.sleep(CONFIG["BATCH_SEND_INTERVAL"])
-                else:
-                    print(
-                        f"WPS第 {i}/{len(batches)} 批次发送失败 [{report_type}]，错误：{result.get('msg')}"
-                    )
-                    return False
             else:
                 print(
                     f"WPS第 {i}/{len(batches)} 批次发送失败 [{report_type}]，状态码：{response.status_code}"
